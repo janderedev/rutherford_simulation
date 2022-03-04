@@ -21,7 +21,7 @@ const config = {
     maxParticles: 100,
     autoSpawn: true,
     paused: true,
-    mode: 'rutherford' as 'rosinenkuchen'|'rutherford',
+    mode: 'rutherford' as 'pudding'|'rutherford',
 };
 
 let frame = 0;

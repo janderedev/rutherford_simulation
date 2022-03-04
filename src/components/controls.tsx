@@ -19,7 +19,7 @@ const Controls: FunctionComponent = () => {
                     onChange={e => { config.mode = e.currentTarget.value as any }}
                     defaultValue="rutherford"
                 >
-                    <option value={"rosinenkuchen"}>Rosinenkuchen</option>
+                    <option value={"pudding"}>Plum Pudding</option>
                     <option value={"rutherford"}>Rutherford</option>
                 </select>
             </div>
