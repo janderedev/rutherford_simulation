@@ -39,14 +39,18 @@ const Simulation: FunctionComponent = () => {
         if (f % 6 == 0) setFpsDisplay(`${Math.round(delta)}ms, ${Math.round(1000/delta)} FPS, ${particles.length} particles`);
 
         // Spawning
-        if (Math.random() > (1 - config.spawnChance) && particles.length < config.maxParticles && config.autoSpawn) particles.push({
-            x: 0,
-            y: (Math.random() * 75) + 12.5,
-            vx: (Math.random() * 2.75) + 0.25,
-            vy: Math.random() > 0.5 ? (Math.random() * 2) - 1 : 0,
-            activated: false,
-            lifetime: 0,
-        });
+        let spawnChance = config.spawnChance;
+        while ((Math.random() > (1 - spawnChance) || spawnChance > 1) && particles.length < config.maxParticles && config.autoSpawn) {
+            particles.push({
+                x: 0,
+                y: (Math.random() * 75) + 12.5,
+                vx: (Math.random() * 2.75) + 0.25,
+                vy: Math.random() > 0.5 ? (Math.random() * 2) - 1 : 0,
+                activated: false,
+                lifetime: 0,
+            });
+            if (spawnChance > 1) spawnChance--;
+        }
 
         setParticles(
             particles
