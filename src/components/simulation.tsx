@@ -1,10 +1,14 @@
-import { FunctionComponent, useCallback, useEffect, useState } from "react";
+import { FunctionComponent, useCallback, useEffect, useRef, useState } from "react";
 import { positive } from "../util";
 import Atom from "./atom";
 import Particle from "./particle";
 
 const DIST_THRESHOLD = 2;
 const MAX_LIFETIME = 20000; // 20 Seconds
+const MAX_TRAIL_LENGTH = 500;
+const TRAIL_LIFETIME = 5000;
+const CANVAS_SCALE = 10;
+const TRAIL_COLOR = { r: 150, g: 150, b: 150 };
 
 const ATOMS = [] as { x: number, y: number }[];
 
@@ -19,14 +23,17 @@ for (let i = 2; i < 9; i++) {
 const config = {
     spawnChance: 0.05,
     maxParticles: 100,
+    spread: 0,
     autoSpawn: true,
     paused: true,
+    trails: false,
     mode: 'rutherford' as 'pudding'|'rutherford',
 };
 
+const oldTrails: { lifetime: number, trail: { x: number, y: number }[] }[] = [];
 let frame = 0;
 
-type ParticlePos = { x: number, y: number, vx: number, vy: number, activated: boolean, lifetime: number }
+type ParticlePos = { x: number, y: number, vx: number, vy: number, activated: boolean, lifetime: number, trail: { x: number, y: number }[] }
 
 const Simulation: FunctionComponent = () => {
     const [particles, setParticles] = useState([] as ParticlePos[]);
@@ -45,9 +52,10 @@ const Simulation: FunctionComponent = () => {
                 x: 0,
                 y: (Math.random() * 75) + 12.5,
                 vx: (Math.random() * 2.75) + 0.25,
-                vy: Math.random() > 0.5 ? (Math.random() * 2) - 1 : 0,
+                vy: (Math.random() * config.spread * 2) - config.spread,
                 activated: false,
                 lifetime: 0,
+                trail: [],
             });
             if (spawnChance > 1) spawnChance--;
         }
@@ -61,6 +69,12 @@ const Simulation: FunctionComponent = () => {
                     // Moving particles
                     h.x += h.vx * 0.01 * delta;
                     h.y += h.vy * 0.01 * delta;
+
+                    // Add trail
+                    if (config.trails) {
+                        h.trail.push({ x: h.x, y: h.y });
+                        if (h.trail.length > MAX_TRAIL_LENGTH) h.trail.shift();
+                    } else if (h.trail.length > 0) h.trail.length = 0;
 
                     // Interacting with atoms
                     if (config.mode == 'rutherford') {
@@ -101,11 +115,26 @@ const Simulation: FunctionComponent = () => {
                     return h;
             })
             .filter(
-                particle => particle.x > 0 && particle.x < 99
-                       && particle.y > 0 && particle.y < 99
-                       && particle.lifetime < MAX_LIFETIME
+                particle => {
+                    if (particle.x > -1 && particle.x < 101
+                       && particle.y > -1 && particle.y < 101
+                       && particle.lifetime < MAX_LIFETIME) return true;
+                    else {
+                        oldTrails.push({ trail: particle.trail, lifetime: TRAIL_LIFETIME });
+                        return false;
+                    }
+                }
             )
         );
+
+        const toRemove: number[] = [];
+        for (const i in oldTrails) {
+            const trail = oldTrails[i];
+            trail.lifetime -= delta;
+            if (trail.lifetime < 0) toRemove.unshift(parseInt(i));
+        }
+
+        toRemove.forEach(i => oldTrails.splice(i, 1));
     }, [ particles ]);
 
     const now = window.performance.now();
@@ -116,16 +145,88 @@ const Simulation: FunctionComponent = () => {
 
     return (
         <div style={{
+            position: 'absolute',
             width: '100%',
-            height: '75%',
+            height: '100%',
+            overflow: 'hidden',
         }}>
             <span style={{ position: 'fixed', left: '5px', top: '5px' }}>
                 {fpsDisplay}
             </span>
+            {config.trails ? <TrailCanvas trails={[
+                ...particles.map(p => ({ points: p.trail, color: TRAIL_COLOR })),
+                ...oldTrails.map(t => ({ points: t.trail, color: TRAIL_COLOR, lifetime: t.lifetime }))
+            ]} /> : <></>}
             {ATOMS.map((atom, i) => <Atom x={atom.x} y={atom.y} key={i} />)}
             {particles.map((particle, i) => <Particle x={particle.x} y={particle.y} activated={particle.activated} key={i} />)}
         </div>
     );
+}
+
+type TrailCanvasTrails = {
+    trails: {
+        points: {
+            x: number,
+            y: number
+        }[],
+        color: {
+            r: number,
+            g: number,
+            b: number,
+        },
+        lifetime?: number,
+    }[]
+}
+const TrailCanvas: FunctionComponent<TrailCanvasTrails> = (props) => {
+    const ref = useRef<HTMLCanvasElement>(null);
+
+    useEffect(() => {
+        const canvas = ref.current;
+        if (!canvas) return console.warn('Canvas was null');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return console.warn('Context was null');
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        for (const trail of props.trails) {
+            const lifetime = trail.lifetime ?? TRAIL_LIFETIME;
+
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(${trail.color.r}, ${trail.color.b}, ${trail.color.g}, ${(1 / TRAIL_LIFETIME) * lifetime})`;
+
+            ctx.moveTo(trail.points[0].x * CANVAS_SCALE, trail.points[0].y * CANVAS_SCALE);
+            for (const point of trail.points.slice(1)) {
+                ctx.lineTo(point.x * CANVAS_SCALE, point.y * CANVAS_SCALE);
+            }
+            ctx.stroke();
+            ctx.closePath();
+        }
+    }, [props]);
+
+    return (
+        <div
+            style={{
+                position: "absolute",
+                top: "0",
+                bottom: "0",
+                left: "0",
+                right: "0",
+                width: "auto",
+                height: "auto",
+                overflow: "hidden",
+            }}
+        >
+            <canvas
+                ref={ref}
+                width={100 * CANVAS_SCALE}
+                height={100 * CANVAS_SCALE}
+                style={{
+                    width: "100%",
+                    height: "100%",
+                }}
+            />
+        </div>)
+    ;
 }
 
 export default Simulation;

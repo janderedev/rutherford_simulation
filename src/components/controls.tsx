@@ -17,7 +17,7 @@ const Controls: FunctionComponent = () => {
                 <select
                     style={{ width: '128px', marginLeft: '8px' }}
                     onChange={e => { config.mode = e.currentTarget.value as any }}
-                    defaultValue="rutherford"
+                    defaultValue={config.mode}
                 >
                     <option value={"pudding"}>Plum Pudding</option>
                     <option value={"rutherford"}>Rutherford</option>
@@ -36,7 +36,7 @@ const Controls: FunctionComponent = () => {
                             document.body.className = 'light';
                         }
                     }}
-                    defaultChecked={true}
+                    defaultChecked={document.body.className == 'dark'}
                 />
             </div>
 
@@ -46,7 +46,7 @@ const Controls: FunctionComponent = () => {
                     style={{ width: '64px', marginLeft: '8px' }}
                     type="checkbox"
                     onChange={e => { config.paused = e.currentTarget.checked }}
-                    defaultChecked={true}
+                    defaultChecked={config.paused}
                 />
             </div>
                 
@@ -56,7 +56,17 @@ const Controls: FunctionComponent = () => {
                     style={{ width: '64px', marginLeft: '8px' }}
                     type="checkbox"
                     onChange={e => { config.autoSpawn = e.currentTarget.checked }}
-                    defaultChecked={true}
+                    defaultChecked={config.autoSpawn}
+                />
+            </div>
+                
+            <div style={innerStyle}>
+                <span>Show Trails</span>
+                <input
+                    style={{ width: '64px', marginLeft: '8px' }}
+                    type="checkbox"
+                    onChange={e => { config.trails = e.currentTarget.checked }}
+                    defaultChecked={config.trails}
                 />
             </div>
 
@@ -66,7 +76,7 @@ const Controls: FunctionComponent = () => {
                     style={{ width: '64px', marginLeft: '8px' }}
                     type="number"
                     onChange={e => { config.spawnChance = parseFloat(e.currentTarget.value) }}
-                    defaultValue={0.05}
+                    defaultValue={config.spawnChance}
                     step={0.05}
                     min={0}
                     max={1}
@@ -79,10 +89,23 @@ const Controls: FunctionComponent = () => {
                     style={{ width: '64px', marginLeft: '8px' }}
                     type="number"
                     onChange={e => { config.maxParticles = parseFloat(e.currentTarget.value) }}
-                    defaultValue={100}
+                    defaultValue={config.maxParticles}
                     step={10}
                     min={0}
                     max={1000}
+                />
+            </div>
+
+            <div style={innerStyle}>
+                <span>Spread</span>
+                <input
+                    style={{ width: '64px', marginLeft: '8px' }}
+                    type="number"
+                    onChange={e => { config.spread = parseFloat(e.currentTarget.value) }}
+                    defaultValue={config.spread}
+                    step={0.25}
+                    min={0}
+                    max={5}
                 />
             </div>
             
