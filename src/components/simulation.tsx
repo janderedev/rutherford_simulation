@@ -127,14 +127,15 @@ const Simulation: FunctionComponent = () => {
             )
         );
 
-        const toRemove: number[] = [];
-        for (const i in oldTrails) {
-            const trail = oldTrails[i];
-            trail.lifetime -= delta;
-            if (trail.lifetime < 0) toRemove.unshift(parseInt(i));
-        }
-
-        toRemove.forEach(i => oldTrails.splice(i, 1));
+        if (config.trails) {
+            const toRemove: number[] = [];
+            for (const i in oldTrails) {
+                const trail = oldTrails[i];
+                trail.lifetime -= delta;
+                if (trail.lifetime < 0) toRemove.unshift(parseInt(i));
+                toRemove.forEach(i => oldTrails.splice(i, 1));
+            }
+        } else if (oldTrails.length > 0) oldTrails.length = 0;
     }, [ particles ]);
 
     const now = window.performance.now();
@@ -189,6 +190,8 @@ const TrailCanvas: FunctionComponent<TrailCanvasTrails> = (props) => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         for (const trail of props.trails) {
+            if (trail.points.length == 0) continue;
+
             const lifetime = trail.lifetime ?? TRAIL_LIFETIME;
 
             ctx.beginPath();
