@@ -133,8 +133,8 @@ const Simulation: FunctionComponent = () => {
                 const trail = oldTrails[i];
                 trail.lifetime -= delta;
                 if (trail.lifetime < 0) toRemove.unshift(parseInt(i));
-                toRemove.forEach(i => oldTrails.splice(i, 1));
             }
+            toRemove.forEach(i => oldTrails.splice(i, 1));
         } else if (oldTrails.length > 0) oldTrails.length = 0;
     }, [ particles ]);
 
